@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Expedientes - Dirección General</title>
+<style>
+  :root {
+    --azul: #1e3a5f;
+    --azul-claro: #2c5282;
+    --verde: #2f855a;
+    --amarillo: #b7791f;
+    --rojo: #c53030;
+    --gris: #f7fafc;
+    --borde: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #edf2f7;
+    color: #2d3748;
+    padding: 20px;
+  }
+  .contenedor { max-width: 1500px; margin: 0 auto; }
+
+  header {
+    background: linear-gradient(135deg, var(--azul), var(--azul-claro));
+    color: white;
+    padding: 18px 30px;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  header h1 { font-size: 1.3rem; }
+  header .sub { font-size: .82rem; opacity: .85; }
+  header .anio-actual {
+    background: rgba(255,255,255,.15);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: white;
+    border-bottom: 2px solid var(--borde);
+    padding: 0 20px;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    font-size: .9rem;
+    color: #718096;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all .2s;
+  }
+  .tab-btn:hover { color: var(--azul-claro); background: var(--gris); }
+  .tab-btn.activo {
+    color: var(--azul);
+    border-bottom-color: var(--azul);
+    background: var(--gris);
+  }
+
+  .tab-contenido { display: none; }
+  .tab-contenido.activo { display: block; }
+
+  .panel {
+    background: white;
+    padding: 20px 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+
+  /* FORMULARIO */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+  .campo { display: flex; flex-direction: column; }
+  .campo label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+  .campo input, .campo select, .campo textarea {
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: .9rem;
+    font-family: inherit;
+    transition: border .2s;
+    background: white;
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus {
+    outline: none;
+    border-color: var(--azul-claro);
+    box-shadow: 0 0 0 3px rgba(44,82,130,.15);
+  }
+  .campo input[readonly] { background: #edf2f7; color: #4a5568; font-weight: 700; }
+  .campo input:disabled, .campo select:disabled { background: #edf2f7; color: #a0aec0; cursor: not-allowed; }
+  .campo.full { grid-column: 1 / -1; }
+  .campo textarea { resize: vertical; min-height: 50px; }
+
+  .botones { display: flex; gap: 10px; flex-wrap: wrap; }
+  button {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: .88rem;
+    cursor: pointer;
+    transition: transform .1s, box-shadow .2s, opacity .2s;
+  }
+  button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,.15); }
+  button:active:not(:disabled) { transform: translateY(0); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-guardar { background: var(--verde); color: white; }
+  .btn-limpiar { background: #718096; color: white; }
+  .btn-exportar { background: var(--azul); color: white; }
+  .btn-riesgo { background: var(--rojo); color: white; }
+  .btn-agregar { background: var(--verde); color: white; }
+  .btn-editar { background: var(--amarillo); color: white; font-size: .78rem; padding: 5px 10px; }
+  .btn-eliminar { background: var(--rojo); color: white; font-size: .78rem; padding: 5px 10px; }
+
+  /* FILTROS */
+  .filtros {
+    background: white;
+    padding: 15px 30px;
+    border-top: 1px solid var(--borde);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filtros input, .filtros select {
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: .85rem;
+    font-family: inherit;
+  }
+  .filtros input[type="text"] { flex: 1; min-width: 200px; }
+
+  /* TABLA */
+  .tabla-wrap {
+    background: white;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  thead { background: var(--azul); color: white; }
+  th {
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: .76rem;
+    text-transform: uppercase;
+  }
+  td { padding: 9px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  tbody tr:hover { background: #f7fafc; }
+  tbody tr:nth-child(even) { background: #fafbfc; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .badge-aprobado { background: #c6f6d5; color: var(--verde); }
+  .badge-observaciones { background: #fefcbf; color: var(--amarillo); }
+  .badge-pendiente { background: #e2e8f0; color: #4a5568; }
+
+  .valor { font-weight: 700; color: var(--azul); white-space: nowrap; }
+  .acciones { display: flex; gap: 5px; }
+
+  /* ESTADÍSTICAS */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    padding: 15px 30px;
+    background: white;
+    border-top: 1px solid var(--borde);
+  }
+  .stat {
+    background: var(--gris);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid var(--azul-claro);
+  }
+  .stat .etiqueta { font-size: .7rem; color: #718096; text-transform: uppercase; font-weight: 700; }
+  .stat .num { font-size: 1.25rem; font-weight: 700; color: var(--azul); margin-top: 2px; }
+  .stat.verde { border-left-color: var(--verde); }
+  .stat.verde .num { color: var(--verde); }
+  .stat.amarillo { border-left-color: var(--amarillo); }
+  .stat.amarillo .num { color: var(--amarillo); }
+
+  .vacio { text-align: center; padding: 40px; color: #a0aec0; }
+
+  /* CONFIGURACIÓN */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px 30px;
+  }
+  @media (max-width: 900px) { .config-grid { grid-template-columns: 1fr; } }
+  .config-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  }
+  .config-card h3 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: var(--azul);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .config-card .input-linea {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .config-card input, .config-card select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    font-size: .88rem;
+    font-family: inherit;
+  }
+  .lista-config {
+    list-style: none;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .lista-config li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--borde);
+    font-size: .88rem;
+  }
+  .lista-config li:last-child { border-bottom: none; }
+  .lista-config li .info { flex: 1; }
+  .lista-config li .info .nombre { font-weight: 600; color: #2d3748; }
+  .lista-config li .info .detalle { font-size: .75rem; color: #718096; margin-top: 2px; }
+  .lista-config li .acciones { flex-shrink: 0; }
+
+  .nota-info {
+    background: #ebf8ff;
+    border-left: 4px solid #4299e1;
+    padding: 12px 16px;
+    margin: 0 30px 20px;
+    border-radius: 6px;
+    font-size: .85rem;
+    color: #2c5282;
+  }
+
+  /* HISTORIAL */
+  .historial-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    padding: 20px 30px;
+  }
+  .anio-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    cursor: pointer;
+    transition: all .2s;
+    border-top: 4px solid var(--azul-claro);
+  }
+  .anio-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.12);
+  }
+  .anio-card .anio { font-size: 1.8rem; font-weight: 700; color: var(--azul); }
+  .anio-card .info { font-size: .82rem; color: #718096; margin-top: 6px; }
+  .anio-card .info strong { color: #2d3748; }
+
+  /* MODAL */
+  .modal-fondo {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-fondo.abierto { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 10px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 25px;
+  }
+  .modal h2 { color: var(--azul); margin-bottom: 15px; font-size: 1.15rem; }
+  .modal .cerrar {
+    float: right;
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: .85rem;
+  }
+  .modal .cuerpo { margin-top: 10px; }
+
+  /* =====================================================
+     IMPRESIÓN — CARTA HORIZONTAL
+     ===================================================== */
+  .solo-impresion { display: none; }
+
+  /* Cabeceras abreviadas solo para impresión */
+  .th-corto { display: none; }
+  .th-largo { display: inline; }
+
+  @page {
+    size: letter landscape;
+    margin: 10mm 10mm 12mm 10mm;
+  }
+
+  @media print {
+    @page { size: 11in 8.5in; }
+
+    html, body {
+      background: white !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 9pt;
+      color: #000;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .contenedor { max-width: none; margin: 0; }
+
+    /* Ocultar todo lo que no debe salir */
+    .no-print,
+    header.no-print,
+    .tabs,
+    .panel.no-print,
+    .filtros,
+    .botones,
+    .modal-fondo,
+    .config-grid,
+    .nota-info,
+    .historial-grid,
+    .acciones,
+    button { display: none !important; }
+
+    /* Mostrar exclusivos de impresión */
+    .solo-impresion { display: block !important; }
+
+    .tab-contenido.activo { display: block !important; }
+    .tab-contenido { display: none !important; }
+    .tab-contenido.activo #detalleAnio { display: block !important; }
+
+    /* Columnas que NO se imprimen */
+    .col-no-imprimir { display: none !important; }
+
+    /* Cambiar cabeceras largas por cortas */
+    .th-largo { display: none !important; }
+    .th-corto { display: inline !important; }
+
+    /* Tabla ajustada a la página */
+    .tabla-wrap {
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      overflow: visible !important;
+      width: 100% !important;
+    }
+    table {
+      width: 100% !important;
+      font-size: 7.8pt !important;
+      table-layout: fixed;
+      border: 1px solid #999;
+    }
+    thead {
+      display: table-header-group;
+      background: #1e3a5f !important;
+      color: white !important;
+    }
+    tfoot { display: table-footer-group; }
+    tr { page-break-inside: avoid; }
+    th, td {
+      padding: 3.5px 5px !important;
+      border: 1px solid #ccc !important;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      hyphens: auto;
+    }
+    th {
+      font-size: 7.2pt !important;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    td { font-size: 7.8pt !important; }
+
+    /* Anchos al imprimir: ahora son 8 columnas visibles
+       (N° Reg, UEB, Agencia, N° Exp, Concepto, F.Pres, F.Aprob, Estado, Valor = 9 en realidad) */
+    table th:nth-child(1), table td:nth-child(1) { width: 5%;  text-align:center; } /* N° Reg */
+    table th:nth-child(2), table td:nth-child(2) { width: 14%; } /* UEB */
+    table th:nth-child(3), table td:nth-child(3) { width: 14%; } /* Agencia */
+    table th:nth-child(4), table td:nth-child(4) { width: 10%; } /* N° Exp */
+    table th:nth-child(5), table td:nth-child(5) { width: 27%; } /* Concepto (más ancho) */
+    table th:nth-child(6), table td:nth-child(6) { width: 7%;  text-align:center; } /* F Pres */
+    table th:nth-child(7), table td:nth-child(7) { width: 7%;  text-align:center; } /* F Aprob */
+    table th:nth-child(8), table td:nth-child(8) { width: 8%;  text-align:center; } /* Estado */
+    table th:nth-child(9), table td:nth-child(9) { width: 8%;  text-align:right; }  /* Valor */
+
+    .badge {
+      padding: 1px 4px !important;
+      font-size: 7pt !important;
+      border-radius: 4px !important;
+      background: transparent !important;
+      color: #000 !important;
+      border: none !important;
+    }
+    .valor { color: #000 !important; }
+
+    tbody tr:nth-child(even) { background: #f2f2f2 !important; }
+    tbody tr:hover { background: inherit !important; }
+
+    /* Encabezado de impresión */
+    .encabezado-impresion {
+      border-bottom: 2px solid #1e3a5f;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .encabezado-impresion .titulo {
+      font-size: 12pt;
+      font-weight: 700;
+      color: #1e3a5f;
+      text-align: center;
+    }
+    .encabezado-impresion .subtitulo {
+      font-size: 9pt;
+      text-align: center;
+      color: #333;
+      margin-top: 2px;
+    }
+    .encabezado-impresion .meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8pt;
+      margin-top: 6px;
+      color: #555;
+    }
+
+    /* Resumen al pie */
+    .resumen-impresion {
+      margin-top: 10px;
+      padding-top: 6px;
+      border-top: 1px solid #999;
+      font-size: 8pt;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .resumen-impresion strong { color: #1e3a5f; }
+
+    /* Pie de página */
+    .pie-impresion {
+      position: fixed;
+      bottom: 4mm;
+      left: 10mm;
+      right: 10mm;
+      font-size: 7pt;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #ccc;
+      padding-top: 2px;
+    }
+
+    .stats { display: none !important; }
+    .vacio { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="contenedor">
+
+  <header class="no-print">
+    <div>
+      <h1>📁 Registro de Expedientes — Dirección General</h1>
+      <div class="sub">Recepción de archivos por UEB y Agencia</div>
+    </div>
+    <div class="anio-actual" id="anioActualHeader">Año: —</div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs no-print">
+    <button class="tab-btn activo" data-tab="registro">📝 Registro</button>
+    <button class="tab-btn" data-tab="historial">📚 Historial por Año</button>
+    <button class="tab-btn" data-tab="config">⚙️ Configuración</button>
+  </div>
+
+  <!-- ============ TAB REGISTRO ============ -->
+  <div class="tab-contenido activo" id="tab-registro">
+
+    <div class="panel no-print">
+      <form id="formulario">
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+          <div class="campo">
+            <label>N° Registro (automático)</label>
+            <input type="text" id="numRegistro" readonly>
+          </div>
+          <div class="campo">
+            <label>UEB *</label>
+            <select id="ueb" required>
+              <option value="">— Seleccione UEB —</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Agencia *</label>
+            <select id="agencia" required disabled>
+              <option value="">— Primero seleccione UEB —</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>N° Expediente *</label>
+            <input type="text" id="numExpediente" required placeholder="Número de expediente">
+          </div>
+          <div class="campo">
+            <label>Fecha Presentación *</label>
+            <input type="date" id="fechaPresentacion" required>
+          </div>
+          <div class="campo">
+            <label>Fecha Aprobación</label>
+            <input type="date" id="fechaAprobacion">
+          </div>
+          <div class="campo">
+            <label>Entregado a (devolución)</label>
+            <input type="text" id="entregadoA" placeholder="Persona que recibe">
+          </div>
+          <div class="campo">
+            <label>Estado *</label>
+            <select id="estado" required>
+              <option value="Aprobado">✅ Aprobado</option>
+              <option value="Observaciones">⚠️ Observaciones</option>
+              <option value="Pendiente">⏳ Pendiente</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Valor ($) *</label>
+            <input type="number" id="valor" required min="0" step="0.01" placeholder="0.00">
+          </div>
+          <div class="campo full">
+            <label>Concepto *</label>
+            <input type="text" id="concepto" required placeholder="Descripción del expediente">
+          </div>
+          <div class="campo full">
+            <label>Observaciones</label>
+            <textarea id="observaciones" placeholder="Notas adicionales (opcional)"></textarea>
+          </div>
+        </div>
+        <div class="botones">
+          <button type="submit" class="btn-guardar" id="btnGuardar">💾 Guardar Expediente</button>
+          <button type="button" class="btn-limpiar" onclick="limpiarFormulario()">🔄 Limpiar</button>
+          <button type="button" class="btn-exportar" onclick="exportarCSVActual()">📤 Exportar CSV</button>
+          <button type="button" class="btn-exportar" onclick="imprimirVista()">🖨️ Imprimir Carta Horizontal</button>
+          <button type="button" class="btn-riesgo" onclick="iniciarNuevoAnio()">🔒 Cerrar Año / Iniciar Nuevo</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="stats no-print">
+      <div class="stat">
+        <div class="etiqueta">Total Expedientes</div>
+        <div class="num" id="statTotal">0</div>
+      </div>
+      <div class="stat verde">
+        <div class="etiqueta">Aprobados</div>
+        <div class="num" id="statAprobados">0</div>
+      </div>
+      <div class="stat amarillo">
+        <div class="etiqueta">Con Observaciones</div>
+        <div class="num" id="statObservaciones">0</div>
+      </div>
+      <div class="stat">
+        <div class="etiqueta">Valor Total</div>
+        <div class="num" id="statValor">$0.00</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filtros no-print">
+      <input type="text" id="buscar" placeholder="🔍 Buscar por UEB, agencia, expediente, concepto o registro...">
+      <select id="filtroEstado">
+        <option value="">Todos los estados</option>
+        <option value="Aprobado">Aprobado</option>
+        <option value="Observaciones">Observaciones</option>
+        <option value="Pendiente">Pendiente</option>
+      </select>
+    </div>
+
+    <!-- ENCABEZADO SOLO IMPRESIÓN -->
+    <div class="solo-impresion encabezado-impresion">
+      <div class="titulo">REGISTRO DE EXPEDIENTES — DIRECCIÓN GENERAL</div>
+      <div class="subtitulo" id="subtituloImpresion">Recepción de archivos por UEB y Agencia</div>
+      <div class="meta">
+        <span><strong>Año en curso:</strong> <span id="impAnio">—</span></span>
+        <span><strong>Fecha de impresión:</strong> <span id="impFecha">—</span></span>
+        <span><strong>Total registros:</strong> <span id="impTotal">0</span></span>
+      </div>
+    </div>
+
+    <!-- TABLA -->
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>N° Reg.</th>
+            <th>UEB</th>
+            <th>Agencia</th>
+            <th>
+              <span class="th-largo">N° Expediente</span>
+              <span class="th-corto">N° Exp.</span>
+            </th>
+            <th>Concepto</th>
+            <th>
+              <span class="th-largo">F. Presentación</span>
+              <span class="th-corto">F. Pres.</span>
+            </th>
+            <th>
+              <span class="th-largo">F. Aprobación</span>
+              <span class="th-corto">F. Aprob.</span>
+            </th>
+            <th class="col-no-imprimir">Entregado a</th>
+            <th>Estado</th>
+            <th>Valor</th>
+            <th class="no-print">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoTabla"></tbody>
+      </table>
+      <div class="vacio" id="mensajeVacio">No hay expedientes registrados en el año actual.</div>
+    </div>
+
+    <!-- RESUMEN SOLO IMPRESIÓN -->
+    <div class="solo-impresion resumen-impresion">
+      <span>✅ <strong>Aprobados:</strong> <span id="impAprobados">0</span></span>
+      <span>⚠️ <strong>Observaciones:</strong> <span id="impObservaciones">0</span></span>
+      <span>⏳ <strong>Pendientes:</strong> <span id="impPendientes">0</span></span>
+      <span>💰 <strong>Valor Total:</strong> <span id="impValorTotal">$0.00</span></span>
+    </div>
+
+    <!-- PIE SOLO IMPRESIÓN -->
+    <div class="solo-impresion pie-impresion">
+      <span>Registro de Expedientes — Dirección General</span>
+      <span id="pieAnio"></span>
+    </div>
+  </div>
+
+  <!-- ============ TAB HISTORIAL ============ -->
+  <div class="tab-contenido" id="tab-historial">
+    <div class="nota-info no-print">
+      📚 Aquí se guardan los expedientes de años anteriores cerrados. Haz clic en un año para ver su contenido, exportarlo o consultarlo.
+    </div>
+    <div class="historial-grid no-print" id="historialGrid"></div>
+    <div class="vacio no-print" id="historialVacio" style="display:none">Aún no hay años cerrados.</div>
+
+    <div id="detalleAnio" style="display:none">
+      <div class="panel no-print" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <h2 style="font-size:1.1rem;color:var(--azul)" id="tituloAnioDetalle"></h2>
+        </div>
+        <div class="botones">
+          <button class="btn-exportar" onclick="exportarCSVHistorial()">📤 Exportar CSV del año</button>
+          <button class="btn-exportar" onclick="imprimirVista()">🖨️ Imprimir Carta Horizontal</button>
+          <button class="btn-limpiar" onclick="cerrarDetalleAnio()">✖ Cerrar</button>
+        </div>
+      </div>
+
+      <!-- ENCABEZADO IMPRESIÓN HISTORIAL -->
+      <div class="solo-impresion encabezado-impresion">
+        <div class="titulo">REGISTRO DE EXPEDIENTES — DIRECCIÓN GENERAL</div>
+        <div class="subtitulo">Historial del año <span id="impAnioHist">—</span></div>
+        <div class="meta">
+          <span><strong>Año:</strong> <span id="impAnioHist2">—</span></span>
+          <span><strong>Fecha de impresión:</strong> <span id="impFechaHist">—</span></span>
+          <span><strong>Total registros:</strong> <span id="impTotalHist">0</span></span>
+        </div>
+      </div>
+
+      <div class="tabla-wrap" style="margin-top:15px">
+        <table>
+          <thead>
+            <tr>
+              <th>N° Reg.</th>
+              <th>UEB</th>
+              <th>Agencia</th>
+              <th>
+                <span class="th-largo">N° Expediente</span>
+                <span class="th-corto">N° Exp.</span>
+              </th>
+              <th>Concepto</th>
+              <th>
+                <span class="th-largo">F. Presentación</span>
+                <span class="th-corto">F. Pres.</span>
+              </th>
+              <th>
+                <span class="th-largo">F. Aprobación</span>
+                <span class="th-corto">F. Aprob.</span>
+              </th>
+              <th class="col-no-imprimir">Entregado a</th>
+              <th>Estado</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoHistorialDetalle"></tbody>
+        </table>
+      </div>
+
+      <div class="solo-impresion resumen-impresion">
+        <span>✅ <strong>Aprobados:</strong> <span id="impAprobHist">0</span></span>
+        <span>⚠️ <strong>Observaciones:</strong> <span id="impObsHist">0</span></span>
+        <span>⏳ <strong>Pendientes:</strong> <span id="impPendHist">0</span></span>
+        <span>💰 <strong>Valor Total:</strong> <span id="impValorHist">$0.00</span></span>
+      </div>
+
+      <div class="solo-impresion pie-impresion">
+        <span>Registro de Expedientes — Dirección General</span>
+        <span id="pieAnioHist"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB CONFIGURACIÓN ============ -->
+  <div class="tab-contenido" id="tab-config">
+    <div class="nota-info">
+      ⚙️ Configura aquí las <strong>UEB</strong> y las <strong>Agencias</strong> de cada UEB. En el formulario de registro solo aparecerán las agencias correspondientes a la UEB seleccionada.
+    </div>
+
+    <div class="config-grid">
+      <div class="config-card">
+        <h3>🏢 UEBs configuradas</h3>
+        <div class="input-linea">
+          <input type="text" id="nuevaUeb" placeholder="Nombre de la nueva UEB">
+          <button class="btn-agregar" onclick="agregarUeb()">+ Agregar</button>
+        </div>
+        <ul class="lista-config" id="listaUebs"></ul>
+      </div>
+
+      <div class="config-card">
+        <h3>🏪 Agencias por UEB</h3>
+        <div class="input-linea">
+          <select id="selectUebAgencia"></select>
+        </div>
+        <div class="input-linea">
+          <input type="text" id="nuevaAgencia" placeholder="Nombre de la nueva agencia">
+          <button class="btn-agregar" onclick="agregarAgencia()">+ Agregar</button>
+        </div>
+        <ul class="lista-config" id="listaAgencias"></ul>
+      </div>
+    </div>
+
+    <div style="padding:0 30px 30px" class="no-print">
+      <button class="btn-riesgo" onclick="resetearTodo()">🗑️ Borrar TODOS los datos (configuración + expedientes + historial)</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL de confirmación -->
+<div class="modal-fondo" id="modalFondo">
+  <div class="modal">
+    <button class="cerrar" onclick="cerrarModal()">✖</button>
+    <h2 id="modalTitulo"></h2>
+    <div class="cuerpo" id="modalCuerpo"></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================
+   ESTRUCTURA DE DATOS
+   ===================================================== */
+const CLAVE = 'expedientes_dg_v2';
+
+let estado = cargarEstado();
+
+function estadoInicial() {
+  const anio = new Date().getFullYear();
+  return {
+    anioActual: anio,
+    consecutivo: 0,
+    uebs: [],
+    expedientesActuales: [],
+    historial: {}
+  };
+}
+
+function cargarEstado() {
+  try {
+    const raw = localStorage.getItem(CLAVE);
+    if (raw) {
+      const e = JSON.parse(raw);
+      if (!e.uebs) e.uebs = [];
+      if (!e.expedientesActuales) e.expedientesActuales = [];
+      if (!e.historial) e.historial = {};
+      if (!e.anioActual) e.anioActual = new Date().getFullYear();
+      if (typeof e.consecutivo !== 'number') e.consecutivo = 0;
+      return e;
+    }
+  } catch (err) { console.warn('Error cargando datos:', err); }
+  return estadoInicial();
+}
+
+function guardar() {
+  localStorage.setItem(CLAVE, JSON.stringify(estado));
+}
+
+/* =====================================================
+   UTILIDADES
+   ===================================================== */
+const fmtFecha = f => f ? f.split('-').reverse().join('/') : '—';
+const fmtMoneda = n => '$' + Number(n || 0).toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2});
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fechaHoy = () => {
+  const d = new Date();
+  return d.toLocaleDateString('es-ES') + ' ' + d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+};
+
+/* =====================================================
+   TABS
+   ===================================================== */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('activo'));
+    document.querySelectorAll('.tab-contenido').forEach(c => c.classList.remove('activo'));
+    btn.classList.add('activo');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('activo');
+    if (btn.dataset.tab === 'historial') renderHistorial();
+    if (btn.dataset.tab === 'config') renderConfig();
+  });
+});
+
+/* =====================================================
+   FORMULARIO: UEB y AGENCIAS DEPENDIENTES
+   ===================================================== */
+function cargarSelectUebs() {
+  const sel = document.getElementById('ueb');
+  const valorActual = sel.value;
+  sel.innerHTML = '<option value="">— Seleccione UEB —</option>' +
+    estado.uebs.map(u => `<option value="${u.id}">${esc(u.nombre)}</option>`).join('');
+  if (valorActual && estado.uebs.some(u => u.id === valorActual)) sel.value = valorActual;
+}
+
+document.getElementById('ueb').addEventListener('change', function() {
+  const agenciaSel = document.getElementById('agencia');
+  if (!this.value) {
+    agenciaSel.innerHTML = '<option value="">— Primero seleccione UEB —</option>';
+    agenciaSel.disabled = true;
+    return;
+  }
+  const ueb = estado.uebs.find(u => u.id === this.value);
+  if (!ueb || ueb.agencias.length === 0) {
+    agenciaSel.innerHTML = '<option value="">— Esta UEB no tiene agencias —</option>';
+    agenciaSel.disabled = true;
+  } else {
+    agenciaSel.innerHTML = '<option value="">— Seleccione Agencia —</option>' +
+      ueb.agencias.map(a => `<option value="${a.id}">${esc(a.nombre)}</option>`).join('');
+    agenciaSel.disabled = false;
+  }
+});
+
+/* =====================================================
+   CRUD EXPEDIENTES
+   ===================================================== */
+document.getElementById('formulario').addEventListener('submit', function(ev) {
+  ev.preventDefault();
+
+  const editId = document.getElementById('editId').value;
+  const uebId = document.getElementById('ueb').value;
+  const agenciaId = document.getElementById('agencia').value;
+
+  if (!uebId) { alert('Debe seleccionar una UEB.'); return; }
+  if (!agenciaId) { alert('Debe seleccionar una Agencia.'); return; }
+
+  const uebObj = estado.uebs.find(u => u.id === uebId);
+  const agenciaObj = uebObj?.agencias.find(a => a.id === agenciaId);
+
+  const datos = {
+    uebId, uebNombre: uebObj.nombre,
+    agenciaId, agenciaNombre: agenciaObj?.nombre || '',
+    numExpediente: document.getElementById('numExpediente').value.trim(),
+    concepto: document.getElementById('concepto').value.trim(),
+    fechaPresentacion: document.getElementById('fechaPresentacion').value,
+    fechaAprobacion: document.getElementById('fechaAprobacion').value,
+    entregadoA: document.getElementById('entregadoA').value.trim(),
+    estado: document.getElementById('estado').value,
+    valor: parseFloat(document.getElementById('valor').value) || 0,
+    observaciones: document.getElementById('observaciones').value.trim()
+  };
+
+  if (editId) {
+    const idx = estado.expedientesActuales.findIndex(e => e.id === editId);
+    if (idx !== -1) {
+      estado.expedientesActuales[idx] = { ...estado.expedientesActuales[idx], ...datos };
+    }
+  } else {
+    estado.consecutivo += 1;
+    datos.id = uid();
+    datos.numRegistro = estado.consecutivo;
+    datos.anio = estado.anioActual;
+    estado.expedientesActuales.push(datos);
+  }
+
+  guardar();
+  limpiarFormulario();
+  render();
+});
+
+function editar(id) {
+  const e = estado.expedientesActuales.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('editId').value = e.id;
+  document.getElementById('numRegistro').value = e.numRegistro;
+  document.getElementById('ueb').value = e.uebId;
+  document.getElementById('ueb').dispatchEvent(new Event('change'));
+  document.getElementById('agencia').value = e.agenciaId;
+  document.getElementById('numExpediente').value = e.numExpediente;
+  document.getElementById('concepto').value = e.concepto;
+  document.getElementById('fechaPresentacion').value = e.fechaPresentacion;
+  document.getElementById('fechaAprobacion').value = e.fechaAprobacion;
+  document.getElementById('entregadoA').value = e.entregadoA || '';
+  document.getElementById('estado').value = e.estado;
+  document.getElementById('valor').value = e.valor;
+  document.getElementById('observaciones').value = e.observaciones || '';
+  document.getElementById('btnGuardar').textContent = '💾 Actualizar Expediente';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function eliminar(id) {
+  if (!confirm('¿Eliminar este expediente? Esta acción no se puede deshacer.')) return;
+  estado.expedientesActuales = estado.expedientesActuales.filter(e => e.id !== id);
+  guardar();
+  render();
+}
+
+function limpiarFormulario() {
+  document.getElementById('formulario').reset();
+  document.getElementById('editId').value = '';
+  document.getElementById('numRegistro').value = estado.consecutivo + 1;
+  document.getElementById('btnGuardar').textContent = '💾 Guardar Expediente';
+  document.getElementById('fechaPresentacion').valueAsDate = new Date();
+  const ag = document.getElementById('agencia');
+  ag.innerHTML = '<option value="">— Primero seleccione UEB —</option>';
+  ag.disabled = true;
+}
+
+/* =====================================================
+   RENDER TABLA AÑO ACTUAL
+   ===================================================== */
+function render() {
+  document.getElementById('anioActualHeader').textContent = 'Año en curso: ' + estado.anioActual;
+
+  const buscar = document.getElementById('buscar').value.toLowerCase().trim();
+  const filtroEstado = document.getElementById('filtroEstado').value;
+
+  const filtrados = estado.expedientesActuales.filter(e => {
+    const coincideBusqueda = !buscar ||
+      (e.uebNombre||'').toLowerCase().includes(buscar) ||
+      (e.agenciaNombre||'').toLowerCase().includes(buscar) ||
+      (e.numExpediente||'').toLowerCase().includes(buscar) ||
+      (e.concepto||'').toLowerCase().includes(buscar) ||
+      String(e.numRegistro).includes(buscar) ||
+      (e.entregadoA||'').toLowerCase().includes(buscar);
+    const coincideEstado = !filtroEstado || e.estado === filtroEstado;
+    return coincideBusqueda && coincideEstado;
+  });
+
+  filtrados.sort((a,b) => b.numRegistro - a.numRegistro);
+
+  const tbody = document.getElementById('cuerpoTabla');
+  tbody.innerHTML = '';
+  const vacio = document.getElementById('mensajeVacio');
+
+  if (filtrados.length === 0) {
+    vacio.style.display = 'block';
+  } else {
+    vacio.style.display = 'none';
+    filtrados.forEach(e => {
+      const tr = document.createElement('tr');
+      const claseBadge = e.estado === 'Aprobado' ? 'badge-aprobado'
+                       : e.estado === 'Observaciones' ? 'badge-observaciones'
+                       : 'badge-pendiente';
+      const icono = e.estado === 'Aprobado' ? '✅'
+                  : e.estado === 'Observaciones' ? '⚠️' : '⏳';
+      tr.innerHTML = `
+        <td><strong>${e.numRegistro}</strong></td>
+        <td>${esc(e.uebNombre)}</td>
+        <td>${esc(e.agenciaNombre)}</td>
+        <td>${esc(e.numExpediente)}</td>
+        <td>${esc(e.concepto)}${e.observaciones ? '<br><small style="color:#718096">📝 '+esc(e.observaciones)+'</small>' : ''}</td>
+        <td>${fmtFecha(e.fechaPresentacion)}</td>
+        <td>${fmtFecha(e.fechaAprobacion)}</td>
+        <td class="col-no-imprimir">${esc(e.entregadoA) || '—'}</td>
+        <td><span class="badge ${claseBadge}">${icono} ${e.estado}</span></td>
+        <td class="valor">${fmtMoneda(e.valor)}</td>
+        <td class="no-print">
+          <div class="acciones">
+            <button class="btn-editar" onclick="editar('${e.id}')">✏️</button>
+            <button class="btn-eliminar" onclick="eliminar('${e.id}')">🗑️</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const total = estado.expedientesActuales.length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statAprobados').textContent = estado.expedientesActuales.filter(e => e.estado === 'Aprobado').length;
+  document.getElementById('statObservaciones').textContent = estado.expedientesActuales.filter(e => e.estado === 'Observaciones').length;
+  document.getElementById('statValor').textContent = fmtMoneda(estado.expedientesActuales.reduce((s,e) => s + Number(e.valor||0), 0));
+}
+
+/* =====================================================
+   PREPARAR DATOS DE IMPRESIÓN
+   ===================================================== */
+function prepararImpresionRegistro() {
+  document.getElementById('impAnio').textContent = estado.anioActual;
+  document.getElementById('impFecha').textContent = fechaHoy();
+  document.getElementById('impTotal').textContent = estado.expedientesActuales.length;
+  document.getElementById('impAprobados').textContent = estado.expedientesActuales.filter(e => e.estado === 'Aprobado').length;
+  document.getElementById('impObservaciones').textContent = estado.expedientesActuales.filter(e => e.estado === 'Observaciones').length;
+  document.getElementById('impPendientes').textContent = estado.expedientesActuales.filter(e => e.estado === 'Pendiente').length;
+  document.getElementById('impValorTotal').textContent = fmtMoneda(estado.expedientesActuales.reduce((s,e) => s + Number(e.valor||0), 0));
+  document.getElementById('pieAnio').textContent = 'Año ' + estado.anioActual + ' — ' + fechaHoy();
+}
+
+function prepararImpresionHistorial() {
+  if (!anioDetalleActual) return;
+  const h = estado.historial[anioDetalleActual];
+  if (!h) return;
+  document.getElementById('impAnioHist').textContent = anioDetalleActual;
+  document.getElementById('impAnioHist2').textContent = anioDetalleActual;
+  document.getElementById('impFechaHist').textContent = fechaHoy();
+  document.getElementById('impTotalHist').textContent = h.expedientes.length;
+  document.getElementById('impAprobHist').textContent = h.expedientes.filter(e => e.estado === 'Aprobado').length;
+  document.getElementById('impObsHist').textContent = h.expedientes.filter(e => e.estado === 'Observaciones').length;
+  document.getElementById('impPendHist').textContent = h.expedientes.filter(e => e.estado === 'Pendiente').length;
+  document.getElementById('impValorHist').textContent = fmtMoneda(h.expedientes.reduce((s,e) => s + Number(e.valor||0), 0));
+  document.getElementById('pieAnioHist').textContent = 'Año ' + anioDetalleActual + ' — ' + fechaHoy();
+}
+
+function imprimirVista() {
+  prepararImpresionRegistro();
+  prepararImpresionHistorial();
+  setTimeout(() => window.print(), 120);
+}
+
+/* =====================================================
+   INICIAR NUEVO AÑO
+   ===================================================== */
+function iniciarNuevoAnio() {
+  const total = estado.expedientesActuales.length;
+  const anio = estado.anioActual;
+  const nuevoAnio = anio + 1;
+
+  mostrarModal(
+    '🔒 Cerrar año ' + anio + ' e iniciar ' + nuevoAnio,
+    `
+      <p>Estás a punto de <strong>cerrar el año ${anio}</strong>.</p>
+      <ul style="margin:10px 0 10px 20px;line-height:1.6">
+        <li>Se archivarán <strong>${total} expediente(s)</strong> del año ${anio}.</li>
+        <li>Los expedientes pasarán a la pestaña <strong>Historial por Año</strong>.</li>
+        <li>El <strong>N° de registro se reiniciará en 1</strong>.</li>
+        <li>El nuevo año en curso será <strong>${nuevoAnio}</strong>.</li>
+        <li>La configuración de UEB y agencias se conserva.</li>
+      </ul>
+      <p style="color:#c53030;font-weight:600">⚠️ Esta acción no se puede deshacer.</p>
+      <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-limpiar" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-riesgo" onclick="confirmarNuevoAnio()">Sí, cerrar ${anio} e iniciar ${nuevoAnio}</button>
+      </div>
+    `
+  );
+}
+
+function confirmarNuevoAnio() {
+  const anio = estado.anioActual;
+  estado.historial[anio] = {
+    cerradoEn: new Date().toISOString(),
+    expedientes: estado.expedientesActuales.slice()
+  };
+  estado.expedientesActuales = [];
+  estado.consecutivo = 0;
+  estado.anioActual = anio + 1;
+
+  guardar();
+  cerrarModal();
+  limpiarFormulario();
+  render();
+  alert(`✅ Año ${anio} cerrado y archivado. Comenzando año ${estado.anioActual} con registro en 1.`);
+}
+
+/* =====================================================
+   HISTORIAL
+   ===================================================== */
+let anioDetalleActual = null;
+
+function renderHistorial() {
+  const grid = document.getElementById('historialGrid');
+  const vacio = document.getElementById('historialVacio');
+  document.getElementById('detalleAnio').style.display = 'none';
+
+  const anios = Object.keys(estado.historial).sort((a,b) => b - a);
+  if (anios.length === 0) {
+    grid.innerHTML = '';
+    vacio.style.display = 'block';
+    return;
+  }
+  vacio.style.display = 'none';
+  grid.innerHTML = anios.map(a => {
+    const h = estado.historial[a];
+    const total = h.expedientes.length;
+    const valor = h.expedientes.reduce((s,e) => s + Number(e.valor||0), 0);
+    const aprob = h.expedientes.filter(e => e.estado === 'Aprobado').length;
+    return `
+      <div class="anio-card" onclick="verDetalleAnio('${a}')">
+        <div class="anio">📅 ${a}</div>
+        <div class="info">
+          <strong>${total}</strong> expediente(s)<br>
+          ✅ ${aprob} aprobados<br>
+          💰 ${fmtMoneda(valor)}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function verDetalleAnio(anio) {
+  anioDetalleActual = anio;
+  const h = estado.historial[anio];
+  if (!h) return;
+  document.getElementById('historialGrid').style.display = 'none';
+  document.getElementById('historialVacio').style.display = 'none';
+  document.getElementById('detalleAnio').style.display = 'block';
+  document.getElementById('tituloAnioDetalle').textContent = `📅 Expedientes del año ${anio} (${h.expedientes.length} registros)`;
+
+  const tbody = document.getElementById('cuerpoHistorialDetalle');
+  tbody.innerHTML = '';
+  const ordenados = h.expedientes.slice().sort((a,b) => b.numRegistro - a.numRegistro);
+  ordenados.forEach(e => {
+    const claseBadge = e.estado === 'Aprobado' ? 'badge-aprobado'
+                     : e.estado === 'Observaciones' ? 'badge-observaciones'
+                     : 'badge-pendiente';
+    const icono = e.estado === 'Aprobado' ? '✅'
+                : e.estado === 'Observaciones' ? '⚠️' : '⏳';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${e.numRegistro}</strong></td>
+      <td>${esc(e.uebNombre)}</td>
+      <td>${esc(e.agenciaNombre)}</td>
+      <td>${esc(e.numExpediente)}</td>
+      <td>${esc(e.concepto)}${e.observaciones ? '<br><small style="color:#718096">📝 '+esc(e.observaciones)+'</small>' : ''}</td>
+      <td>${fmtFecha(e.fechaPresentacion)}</td>
+      <td>${fmtFecha(e.fechaAprobacion)}</td>
+      <td class="col-no-imprimir">${esc(e.entregadoA) || '—'}</td>
+      <td><span class="badge ${claseBadge}">${icono} ${e.estado}</span></td>
+      <td class="valor">${fmtMoneda(e.valor)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function cerrarDetalleAnio() {
+  anioDetalleActual = null;
+  document.getElementById('detalleAnio').style.display = 'none';
+  document.getElementById('historialGrid').style.display = 'grid';
+  renderHistorial();
+}
+
+/* =====================================================
+   CONFIGURACIÓN
+   ===================================================== */
+function renderConfig() {
+  const ulUeb = document.getElementById('listaUebs');
+  if (estado.uebs.length === 0) {
+    ulUeb.innerHTML = '<li style="color:#a0aec0">Aún no hay UEBs configuradas.</li>';
+  } else {
+    ulUeb.innerHTML = estado.uebs.map(u => `
+      <li>
+        <div class="info">
+          <div class="nombre">${esc(u.nombre)}</div>
+          <div class="detalle">${u.agencias.length} agencia(s)</div>
+        </div>
+        <div class="acciones">
+          <button class="btn-editar" onclick="renombrarUeb('${u.id}')">✏️</button>
+          <button class="btn-eliminar" onclick="eliminarUeb('${u.id}')">🗑️</button>
+        </div>
+      </li>
+    `).join('');
+  }
+
+  const sel = document.getElementById('selectUebAgencia');
+  const valorAnt = sel.value;
+  if (estado.uebs.length === 0) {
+    sel.innerHTML = '<option value="">— Cree primero una UEB —</option>';
+    sel.disabled = true;
+  } else {
+    sel.disabled = false;
+    sel.innerHTML = '<option value="">— Seleccione UEB —</option>' +
+      estado.uebs.map(u => `<option value="${u.id}">${esc(u.nombre)}</option>`).join('');
+    if (valorAnt && estado.uebs.some(u => u.id === valorAnt)) sel.value = valorAnt;
+    else if (estado.uebs.length > 0) sel.value = estado.uebs[0].id;
+  }
+
+  renderListaAgencias();
+  cargarSelectUebs();
+}
+
+document.getElementById('selectUebAgencia').addEventListener('change', renderListaAgencias);
+
+function renderListaAgencias() {
+  const ul = document.getElementById('listaAgencias');
+  const uebId = document.getElementById('selectUebAgencia').value;
+  if (!uebId) {
+    ul.innerHTML = '<li style="color:#a0aec0">Seleccione una UEB para ver sus agencias.</li>';
+    return;
+  }
+  const ueb = estado.uebs.find(u => u.id === uebId);
+  if (!ueb || ueb.agencias.length === 0) {
+    ul.innerHTML = '<li style="color:#a0aec0">Esta UEB no tiene agencias. Agrega una arriba.</li>';
+    return;
+  }
+  ul.innerHTML = ueb.agencias.map(a => `
+    <li>
+      <div class="info"><div class="nombre">${esc(a.nombre)}</div></div>
+      <div class="acciones">
+        <button class="btn-editar" onclick="renombrarAgencia('${ueb.id}','${a.id}')">✏️</button>
+        <button class="btn-eliminar" onclick="eliminarAgencia('${ueb.id}','${a.id}')">🗑️</button>
+      </div>
+    </li>
+  `).join('');
+}
+
+function agregarUeb() {
+  const input = document.getElementById('nuevaUeb');
+  const nombre = input.value.trim();
+  if (!nombre) { alert('Escriba el nombre de la UEB.'); return; }
+  if (estado.uebs.some(u => u.nombre.toLowerCase() === nombre.toLowerCase())) {
+    alert('Ya existe una UEB con ese nombre.'); return;
+  }
+  estado.uebs.push({ id: uid(), nombre, agencias: [] });
+  input.value = '';
+  guardar();
+  renderConfig();
+}
+
+function renombrarUeb(id) {
+  const ueb = estado.uebs.find(u => u.id === id);
+  if (!ueb) return;
+  const nuevo = prompt('Nuevo nombre de la UEB:', ueb.nombre);
+  if (nuevo === null) return;
+  const n = nuevo.trim();
+  if (!n) return;
+  if (estado.uebs.some(u => u.id !== id && u.nombre.toLowerCase() === n.toLowerCase())) {
+    alert('Ya existe otra UEB con ese nombre.'); return;
+  }
+  ueb.nombre = n;
+  guardar();
+  renderConfig();
+}
+
+function eliminarUeb(id) {
+  const ueb = estado.uebs.find(u => u.id === id);
+  if (!ueb) return;
+  if (!confirm(`¿Eliminar la UEB "${ueb.nombre}" y todas sus agencias?\n\n(No se borran expedientes ya registrados, conservarán el nombre.)`)) return;
+  estado.uebs = estado.uebs.filter(u => u.id !== id);
+  guardar();
+  renderConfig();
+}
+
+function agregarAgencia() {
+  const uebId = document.getElementById('selectUebAgencia').value;
+  const input = document.getElementById('nuevaAgencia');
+  const nombre = input.value.trim();
+  if (!uebId) { alert('Seleccione primero una UEB.'); return; }
+  if (!nombre) { alert('Escriba el nombre de la agencia.'); return; }
+  const ueb = estado.uebs.find(u => u.id === uebId);
+  if (!ueb) return;
+  if (ueb.agencias.some(a => a.nombre.toLowerCase() === nombre.toLowerCase())) {
+    alert('Esa UEB ya tiene una agencia con ese nombre.'); return;
+  }
+  ueb.agencias.push({ id: uid(), nombre });
+  input.value = '';
+  guardar();
+  renderConfig();
+}
+
+function renombrarAgencia(uebId, agId) {
+  const ueb = estado.uebs.find(u => u.id === uebId);
+  const ag = ueb?.agencias.find(a => a.id === agId);
+  if (!ag) return;
+  const nuevo = prompt('Nuevo nombre de la agencia:', ag.nombre);
+  if (nuevo === null) return;
+  const n = nuevo.trim();
+  if (!n) return;
+  if (ueb.agencias.some(a => a.id !== agId && a.nombre.toLowerCase() === n.toLowerCase())) {
+    alert('Ya existe otra agencia con ese nombre en esta UEB.'); return;
+  }
+  ag.nombre = n;
+  guardar();
+  renderConfig();
+}
+
+function eliminarAgencia(uebId, agId) {
+  const ueb = estado.uebs.find(u => u.id === uebId);
+  const ag = ueb?.agencias.find(a => a.id === agId);
+  if (!ag) return;
+  if (!confirm(`¿Eliminar la agencia "${ag.nombre}"?`)) return;
+  ueb.agencias = ueb.agencias.filter(a => a.id !== agId);
+  guardar();
+  renderConfig();
+}
+
+/* =====================================================
+   EXPORTAR CSV
+   ===================================================== */
+function exportarCSVActual() {
+  if (estado.expedientesActuales.length === 0) { alert('No hay expedientes para exportar.'); return; }
+  exportarLista(estado.expedientesActuales, 'expedientes_' + estado.anioActual);
+}
+
+function exportarCSVHistorial() {
+  if (!anioDetalleActual) return;
+  const h = estado.historial[anioDetalleActual];
+  if (!h || h.expedientes.length === 0) { alert('No hay expedientes en ese año.'); return; }
+  exportarLista(h.expedientes, 'expedientes_' + anioDetalleActual);
+}
+
+function exportarLista(lista, nombreBase) {
+  const cab = ['N° Registro','Año','UEB','Agencia','N° Expediente','Concepto','Fecha Presentación','Fecha Aprobación','Entregado a','Estado','Valor','Observaciones'];
+  const filas = lista.map(e => [
+    e.numRegistro, e.anio || estado.anioActual, e.uebNombre, e.agenciaNombre, e.numExpediente,
+    e.concepto, fmtFecha(e.fechaPresentacion), fmtFecha(e.fechaAprobacion),
+    e.entregadoA || '', e.estado, e.valor, e.observaciones || ''
+  ]);
+  const csv = [cab, ...filas].map(f => f.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombreBase + '_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* =====================================================
+   MODAL
+   ===================================================== */
+function mostrarModal(titulo, html) {
+  document.getElementById('modalTitulo').innerHTML = titulo;
+  document.getElementById('modalCuerpo').innerHTML = html;
+  document.getElementById('modalFondo').classList.add('abierto');
+}
+function cerrarModal() {
+  document.getElementById('modalFondo').classList.remove('abierto');
+}
+document.getElementById('modalFondo').addEventListener('click', function(ev) {
+  if (ev.target === this) cerrarModal();
+});
+
+/* =====================================================
+   RESET TOTAL
+   ===================================================== */
+function resetearTodo() {
+  if (!confirm('⚠️ ATENCIÓN: Se borrarán TODOS los datos:\n\n- Configuración de UEB y agencias\n- Expedientes del año actual\n- Historial de años anteriores\n\n¿Desea continuar?')) return;
+  if (!confirm('Última confirmación. ¿Está completamente seguro?')) return;
+  localStorage.removeItem(CLAVE);
+  estado = estadoInicial();
+  guardar();
+  renderConfig();
+  render();
+  renderHistorial();
+  limpiarFormulario();
+  alert('Todos los datos han sido borrados.');
+}
+
+/* =====================================================
+   INICIALIZACIÓN
+   ===================================================== */
+document.getElementById('buscar').addEventListener('input', render);
+document.getElementById('filtroEstado').addEventListener('change', render);
+
+renderConfig();
+limpiarFormulario();
+render();
+renderHistorial();
+</script>
+</body>
+</html>
